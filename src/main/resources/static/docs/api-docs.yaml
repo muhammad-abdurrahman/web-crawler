@@ -1,0 +1,78 @@
+openapi: 3.0.1
+info:
+  title: API Documentation
+  version: 1.0.0
+tags:
+  - name: Crawler
+    description: Operations related to web crawling
+
+paths:
+  /api/v1/crawler/crawl:
+    post:
+      tags:
+        - Crawler
+      summary: Start web crawling
+      description: Start a web crawling process with a given starting URL and callback URL.
+      requestBody:
+        description: Crawl request details
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrawlRequest'
+            example:
+              startingUrl: "https://example.com"
+              callbackUrl: "https://example.com/callback"
+      responses:
+        "202":
+          description: Crawling started successfully
+      callbacks:
+        CrawlCompletionCallback:
+          '{$request.body#/callbackUrl}':
+            post:
+              tags:
+                - Crawler
+              summary: Crawl Completion Callback
+              description: Callback sent when crawling is complete.
+              requestBody:
+                description: Crawl response payload
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/CrawlResponse'
+                    examples:
+                      CrawlResponseExample:
+                        value:
+                          status: "completed"
+                          totalLinks: 50
+                          brokenLinks: 5
+              responses:
+                "200":
+                  description: Callback acknowledged
+                "500":
+                  description: Error processing callback
+
+components:
+  schemas:
+    CrawlRequest:
+      required: ["callbackUrl", "startingUrl"]
+      type: object
+      properties:
+        startingUrl:
+          type: string
+        callbackUrl:
+          type: string
+    CrawlResponse:
+      type: object
+      required: ["status", "totalLinks", "brokenLinks"]
+      properties:
+        status:
+          type: string
+          example: "completed"
+        totalLinks:
+          type: integer
+          example: 50
+        brokenLinks:
+          type: integer
+          example: 5
