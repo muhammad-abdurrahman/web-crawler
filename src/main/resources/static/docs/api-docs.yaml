@@ -26,6 +26,10 @@ paths:
       responses:
         "202":
           description: Crawling started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrawlSyncResponse'
       callbacks:
         CrawlCompletionCallback:
           '{$request.body#/callbackUrl}':
@@ -38,15 +42,17 @@ paths:
                 description: Crawl response payload
                 required: true
                 content:
+                  multipart/form-data:
+                    schema:
+                      type: object
+                      properties:
+                        file:
+                          type: string
+                          format: binary
+                          description: JSON file containing the crawl response
                   application/json:
                     schema:
-                      $ref: '#/components/schemas/CrawlResponse'
-                    examples:
-                      CrawlResponseExample:
-                        value:
-                          status: "completed"
-                          totalLinks: 50
-                          brokenLinks: 5
+                      $ref: '#/components/schemas/CrawlAsyncResponse'
               responses:
                 "200":
                   description: Callback acknowledged
@@ -56,23 +62,39 @@ paths:
 components:
   schemas:
     CrawlRequest:
-      required: ["callbackUrl", "startingUrl"]
+      required: [ "callbackUrl", "startingUrl" ]
       type: object
       properties:
         startingUrl:
           type: string
         callbackUrl:
           type: string
-    CrawlResponse:
+    CrawlSyncResponse:
       type: object
-      required: ["status", "totalLinks", "brokenLinks"]
+      required: [ "correlationId" ]
       properties:
-        status:
+        correlationId:
           type: string
-          example: "completed"
-        totalLinks:
-          type: integer
-          example: 50
-        brokenLinks:
-          type: integer
-          example: 5
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+    CrawlAsyncResponse:
+      type: object
+      required: [ "startingUrl", "visitedPages" ]
+      properties:
+        startingUrl:
+          type: string
+          example: "https://example.com"
+        visitedPages:
+          type: array
+          items:
+            type: object
+            required: [ "pageUrl", "hyperlinks" ]
+            properties:
+              pageUrl:
+                type: string
+                example: "https://example.com/page1"
+              hyperlinks:
+                type: array
+                items:
+                  type: string
+                example: [ "https://example.com/page2", "https://example.com/page3" ]
